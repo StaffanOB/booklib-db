@@ -3,12 +3,14 @@
 ## ✅ What's Been Set Up
 
 ### 1. **Local Development Environment**
+
 - ✅ Local PostgreSQL database running on port 5432
 - ✅ Database: `booklib_test`
 - ✅ All tables created via Alembic migrations
 - ✅ Python virtual environment with Alembic installed
 
 ### 2. **Test Server (192.168.1.175)**
+
 - ✅ PostgreSQL database running in Docker
 - ✅ All tables created and up-to-date
 - ✅ booklib-api connected and working
@@ -16,6 +18,7 @@
 - ✅ Jenkins pipeline for automated deployment
 
 ### 3. **Development Workflow**
+
 - ✅ Documentation in `DEVELOPMENT_WORKFLOW.md`
 - ✅ Quick reference in `QUICK_REFERENCE.md`
 - ✅ Helper scripts in `scripts/`:
@@ -30,40 +33,43 @@
 ### **Phase 1: Local Development**
 
 1. **Start working on a feature**:
+
    ```bash
    cd ~/develop/projekts/booklib/booklib-db
-   
+
    # Make sure database is running
    docker-compose up -d db
    ```
 
 2. **Make database changes**:
+
    ```bash
    # Edit your models
    vim models.py
-   
+
    # Activate virtual environment
    source venv/bin/activate
-   
+
    # Generate migration
    export DATABASE_URL="postgresql://booklib_user:test_password@localhost:5432/booklib_test"
    alembic revision --autogenerate -m "Add new feature"
-   
+
    # Review the generated migration
    vim migrations/versions/xxxx_add_new_feature.py
-   
+
    # Apply migration locally
    alembic upgrade head
    ```
 
 3. **Update your API** (in booklib-api directory):
+
    ```bash
    cd ~/develop/projekts/booklib/booklib-api
-   
+
    # Update your API code to use new database schema
    vim app/models.py  # or wherever your models are
    vim app/routes.py  # add new endpoints
-   
+
    # Test locally with local database
    python app/main.py
    ```
@@ -80,6 +86,7 @@
 When you're happy with your changes:
 
 1. **Commit database changes**:
+
    ```bash
    cd ~/develop/projekts/booklib/booklib-db
    git add models.py migrations/
@@ -90,16 +97,19 @@ When you're happy with your changes:
 2. **Deploy database** (Choose one):
 
    **Option A: Jenkins Pipeline (Recommended)**
+
    - Go to Jenkins: http://your-jenkins:8080
    - Run `booklib-db-pipeline`
    - Migrations run automatically
-   
+
    **Option B: Manual script**
+
    ```bash
    ./scripts/deploy-db.sh
    ```
 
 3. **Commit API changes**:
+
    ```bash
    cd ~/develop/projekts/booklib/booklib-api
    git add .
@@ -108,14 +118,16 @@ When you're happy with your changes:
    ```
 
 4. **Deploy API**:
+
    - Go to Jenkins
    - Run `booklib-api-pipeline`
 
 5. **Verify deployment**:
+
    ```bash
    # Test the API on server
    curl http://192.168.1.175:5000/health
-   
+
    # Check database on server
    ssh deploy@192.168.1.175 "docker exec booklib-db psql -U booklib_user -d booklib_test -c '\dt'"
    ```
@@ -168,7 +180,7 @@ git push
 
 # Run Jenkins: booklib-db-pipeline
 
-# Push API changes  
+# Push API changes
 cd ~/develop/projekts/booklib/booklib-api
 git add .
 git commit -m "Use rating_count field"
@@ -244,11 +256,13 @@ ssh deploy@192.168.1.175 "cd /opt/booklib/db && bash scripts/run-migrations.sh"
 ## 🌐 Access Points
 
 ### Local
+
 - **Database**: `localhost:5432`
 - **API**: `localhost:5000` (when running)
 - **Connection**: `postgresql://booklib_user:test_password@localhost:5432/booklib_test`
 
 ### Test Server (192.168.1.175)
+
 - **Database**: `192.168.1.175:5432`
 - **API**: `http://192.168.1.175:5000`
 - **PGAdmin**: `http://192.168.1.175:8080`
@@ -269,11 +283,13 @@ Your complete development workflow is now in place:
 5. ✅ Separate repositories working together seamlessly
 
 **Next Steps:**
+
 - Start developing your API features
 - Make database changes as needed
 - Follow the workflow above for each feature
 
 **Need Help?**
+
 - Check `DEVELOPMENT_WORKFLOW.md` for detailed info
 - Check `QUICK_REFERENCE.md` for quick commands
 - Use the helper scripts in `scripts/`

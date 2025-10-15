@@ -10,6 +10,7 @@ docker-compose up -d db
 ```
 
 This starts PostgreSQL locally on port 5432 with:
+
 - Database: `booklib_test`
 - User: `booklib_user`
 - Password: `test_password`
@@ -75,6 +76,7 @@ Make corresponding changes in your API code and test locally.
 ### Option A: Deploy Both API and DB (Recommended)
 
 1. **Commit DB changes**:
+
 ```bash
 cd ~/develop/projekts/booklib/booklib-db
 git add models.py migrations/
@@ -83,10 +85,12 @@ git push
 ```
 
 2. **Run booklib-db Jenkins pipeline** - this will:
+
    - Deploy database service
    - Run migrations automatically
 
 3. **Commit API changes**:
+
 ```bash
 cd ~/develop/projekts/booklib/booklib-api
 git add .
@@ -185,9 +189,11 @@ ssh deploy@192.168.1.175 "docker logs booklib-db --tail=50"
 ## Troubleshooting
 
 ### Migration conflicts
+
 If you get conflicts, you may need to resolve them manually or create a new migration head.
 
 ### Database out of sync
+
 ```bash
 # Check current version
 alembic current
@@ -197,6 +203,7 @@ alembic stamp head
 ```
 
 ### Local database reset
+
 ```bash
 docker-compose down -v  # WARNING: Deletes all data!
 docker-compose up -d db

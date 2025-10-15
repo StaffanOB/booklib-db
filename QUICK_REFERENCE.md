@@ -64,11 +64,13 @@ alembic downgrade -1
 ## 🔗 Connection Strings
 
 **Local:**
+
 ```
 postgresql://booklib_user:test_password@localhost:5432/booklib_test
 ```
 
 **Test Server:**
+
 ```
 postgresql://booklib_user:test_password@booklib-db:5432/booklib_test
 ```
