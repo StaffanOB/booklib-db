@@ -121,23 +121,23 @@ EOF
             steps {
                 sshagent(['deploy-key']) {
                     script {
-                        sh """
-                            set +e
+                        sh '''
                             echo "Running database migrations..."
-                            ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} '
-                                cd ${DEPLOY_PATH}
+                            ssh -o StrictHostKeyChecking=no deploy@192.168.1.175 bash -s << 'EOF'
+                                cd /opt/booklib/db
                                 
-                                # Install alembic if needed and run migrations
-                                docker exec booklib-db psql -U booklib_user -d booklib_test -c "SELECT version();" || true
+                                # Run migrations using temporary Python container
+                                docker run --rm \
+                                  --network booklib-net \
+                                  -v $(pwd):/app \
+                                  -w /app \
+                                  -e DATABASE_URL="postgresql://booklib_user:test_password@booklib-db:5432/booklib_test" \
+                                  python:3.12-slim \
+                                  bash -c "pip install -q -r requirements.txt && alembic upgrade head"
                                 
-                                # If you have a migrations container or need to run alembic:
-                                # docker run --rm --network booklib-net -v \$(pwd):/app -w /app python:3.12-slim bash -c "
-                                #   pip install -r requirements.txt && alembic upgrade head
-                                # "
-                                
-                                echo "Migrations completed (if configured)"
-                            '
-                        """
+                                echo "Migrations completed successfully!"
+EOF
+                        '''
                     }
                 }
             }
