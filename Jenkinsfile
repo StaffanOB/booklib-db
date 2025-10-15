@@ -5,47 +5,9 @@ pipeline {
         DEPLOY_SERVER = '192.168.1.175'
         DEPLOY_USER = 'deploy'
         DEPLOY_PATH = '/opt/booklib/db'
-        DB_BACKUP_PATH = '/opt/booklib/db/backups'
     }
     
     stages {
-        stage('Prepare Deployment Files') {
-            steps {
-                script {
-                    sh """
-                        echo "Preparing deployment files..."
-                        ls -la
-                    """
-                }
-            }
-        }
-        
-        stage('Backup Database') {
-            steps {
-                sshagent(['deploy-key']) {
-                    script {
-                        sh """
-                            set +e
-                            echo "Creating database backup..."
-                            ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} '
-                                mkdir -p ${DB_BACKUP_PATH}
-                                cd ${DEPLOY_PATH}
-                                
-                                # Check if database container is running
-                                if docker ps | grep -q booklib-db; then
-                                    echo "Creating backup of existing database..."
-                                    docker exec booklib-db pg_dump -U booklib_user booklib_test > ${DB_BACKUP_PATH}/backup_\$(date +%Y%m%d_%H%M%S).sql || true
-                                    echo "Backup created"
-                                else
-                                    echo "No running database found, skipping backup"
-                                fi
-                            '
-                        """
-                    }
-                }
-            }
-        }
-
         stage('Deploy to Server') {
             steps {
                 sshagent(['deploy-key']) {
@@ -53,32 +15,17 @@ pipeline {
                         sh """
                             set -e
                             cd ${WORKSPACE}
-                            echo "Current workspace:"
-                            pwd
-                            ls -la
+                            echo "Deploying database container..."
 
                             # Ensure deploy path exists
                             ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} 'mkdir -p ${DEPLOY_PATH}'
-                            ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} 'mkdir -p ${DEPLOY_PATH}/init-scripts'
                             ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} 'mkdir -p ${DEPLOY_PATH}/backups'
-                            ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} 'mkdir -p ${DEPLOY_PATH}/migrations'
 
-                            echo "Copying deployment files..."
+                            echo "Copying docker-compose.yml..."
                             scp -o StrictHostKeyChecking=no ${WORKSPACE}/docker-compose.yml ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
-                            scp -o StrictHostKeyChecking=no ${WORKSPACE}/alembic.ini ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
-                            scp -o StrictHostKeyChecking=no ${WORKSPACE}/models.py ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
-                            scp -o StrictHostKeyChecking=no ${WORKSPACE}/requirements.txt ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
-                            
-                            # Copy init scripts if they exist
-                            if [ -d "${WORKSPACE}/init-scripts" ] && [ "\$(ls -A ${WORKSPACE}/init-scripts)" ]; then
-                                scp -o StrictHostKeyChecking=no -r ${WORKSPACE}/init-scripts/* ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/init-scripts/
-                            fi
-                            
-                            # Copy migrations
-                            scp -o StrictHostKeyChecking=no -r ${WORKSPACE}/migrations/* ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/migrations/
                         """
                         
-                        // Deploy script - using separate sh block to avoid escaping issues
+                        // Deploy script
                         sh '''
                             ssh -o StrictHostKeyChecking=no deploy@192.168.1.175 bash -s << 'EOF'
                                 set +e
@@ -87,13 +34,10 @@ pipeline {
                                 # Create network if it doesn't exist
                                 docker network inspect booklib-net >/dev/null 2>&1 || docker network create booklib-net
 
-                                # Stop and remove old containers
-                                docker compose -f docker-compose.yml down || true
-
-                                # Start database service
+                                # Deploy database service
                                 docker compose -f docker-compose.yml up -d db
                                 
-                                # Wait for container to start and database to be ready
+                                # Wait for database to be ready
                                 echo "Waiting for database to start..."
                                 i=1
                                 while [ $i -le 30 ]; do
@@ -126,7 +70,6 @@ EOF
                                 set +e
                                 ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} '
                                     echo "Running database health check..."
-                                    cd ${DEPLOY_PATH}
                                     
                                     # Check if container is running
                                     if docker ps | grep -q booklib-db; then
