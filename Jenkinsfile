@@ -32,9 +32,9 @@ pipeline {
                                 cd ${DEPLOY_PATH}
                                 
                                 # Check if database container is running
-                                if docker ps | grep -q booklib-db-dev; then
+                                if docker ps | grep -q booklib-db; then
                                     echo "Creating backup of existing database..."
-                                    docker exec booklib-db-dev pg_dump -U booklib_user booklib_dev > ${DB_BACKUP_PATH}/backup_\$(date +%Y%m%d_%H%M%S).sql || true
+                                    docker exec booklib-db pg_dump -U booklib_user booklib_test > ${DB_BACKUP_PATH}/backup_\$(date +%Y%m%d_%H%M%S).sql || true
                                     echo "Backup created"
                                 else
                                     echo "No running database found, skipping backup"
@@ -117,7 +117,7 @@ pipeline {
                                 cd ${DEPLOY_PATH}
                                 
                                 # Install alembic if needed and run migrations
-                                docker exec booklib-db-dev psql -U booklib_user -d booklib_dev -c "SELECT version();" || true
+                                docker exec booklib-db psql -U booklib_user -d booklib_test -c "SELECT version();" || true
                                 
                                 # If you have a migrations container or need to run alembic:
                                 # docker run --rm --network booklib-net -v \$(pwd):/app -w /app python:3.12-slim bash -c "
@@ -144,11 +144,11 @@ pipeline {
                                     cd ${DEPLOY_PATH}
                                     
                                     # Check if container is running
-                                    if docker ps | grep -q booklib-db-dev; then
+                                    if docker ps | grep -q booklib-db; then
                                         echo "Database container is running"
                                         
                                         # Test database connection
-                                        docker exec booklib-db-dev pg_isready -U booklib_user -d booklib_dev
+                                        docker exec booklib-db pg_isready -U booklib_user -d booklib_test
                                         if [ \$? -eq 0 ]; then
                                             echo "Database is accepting connections"
                                             exit 0
