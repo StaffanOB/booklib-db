@@ -76,9 +76,11 @@ pipeline {
                             
                             # Copy migrations
                             scp -o StrictHostKeyChecking=no -r ${WORKSPACE}/migrations/* ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/migrations/
-
-                            echo "Running deployment commands on server..."
-                            ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} << 'ENDSSH'
+                        """
+                        
+                        // Deploy script - using separate sh block to avoid escaping issues
+                        sh '''
+                            ssh -o StrictHostKeyChecking=no deploy@192.168.1.175 bash -s << 'EOF'
                                 set +e
                                 cd /opt/booklib/db
 
@@ -108,8 +110,8 @@ pipeline {
                                 docker compose ps
                                 
                                 exit 0
-ENDSSH
-                        """
+EOF
+                        '''
                     }
                 }
             }
