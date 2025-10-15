@@ -91,9 +91,16 @@ pipeline {
                                 # Start database service
                                 docker compose -f docker-compose.yml up -d db
                                 
-                                # Wait for database to be ready
-                                echo "Waiting for database to be ready..."
-                                sleep 10
+                                # Wait for container to start and database to be ready
+                                echo "Waiting for database to start..."
+                                for i in {1..30}; do
+                                    if docker exec booklib-db pg_isready -U booklib_user -d booklib_test 2>/dev/null; then
+                                        echo "Database is ready!"
+                                        break
+                                    fi
+                                    echo "Waiting... (attempt $i/30)"
+                                    sleep 2
+                                done
                                 
                                 # Check database status
                                 docker compose ps
