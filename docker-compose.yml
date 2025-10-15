@@ -2,18 +2,23 @@ services:
   db:
     image: postgres:15-alpine
     container_name: booklib-db
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: booklib_test
-      POSTGRES_USER: booklib_user
-      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: ${POSTGRES_DB:-booklib_test}
+      POSTGRES_USER: ${POSTGRES_USER:-booklib_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-test_password}
     ports:
       - "5432:5432"
     volumes:
-      - postgres_test_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./backups:/backups
     networks:
       - booklib-net
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booklib_user -d booklib_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   pgadmin:
     image: dpage/pgadmin4:latest
