@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: booklib-db-dev
+    environment:
+      POSTGRES_DB: booklib_dev
+      POSTGRES_USER: booklib_user
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+      - ./backups:/backups
+    networks:
+      - booklib-net
+    restart: unless-stopped
+
+  test_db:
+    image: postgres:15-alpine
+    container_name: booklib-test-db
+    environment:
+      POSTGRES_DB: booklib_test
+      POSTGRES_USER: booklib_user
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    profiles: ["testing"]
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: booklib-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@booklib.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json
+    depends_on:
+      - db
+    restart: unless-stopped
+    profiles: ["tools"]
+
+volumes:
+  postgres_dev_data:
+  postgres_test_data:
+  pgadmin_data:
+
+networks:
+  booklib-net:
+    external: true
