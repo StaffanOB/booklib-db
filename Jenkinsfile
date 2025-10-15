@@ -82,7 +82,7 @@ pipeline {
                                 set +e
                                 cd ${DEPLOY_PATH}
 
-                                # Create network if it doesn't exist
+                                # Create network if it doesn'\''t exist
                                 docker network inspect booklib-net >/dev/null 2>&1 || docker network create booklib-net
 
                                 # Stop and remove old containers
@@ -93,13 +93,15 @@ pipeline {
                                 
                                 # Wait for container to start and database to be ready
                                 echo "Waiting for database to start..."
-                                for i in {1..30}; do
+                                i=1
+                                while [ \\$i -le 30 ]; do
                                     if docker exec booklib-db pg_isready -U booklib_user -d booklib_test 2>/dev/null; then
                                         echo "Database is ready!"
                                         break
                                     fi
-                                    echo "Waiting... (attempt $i/30)"
+                                    echo "Waiting... (attempt \\$i/30)"
                                     sleep 2
+                                    i=\\$((i + 1))
                                 done
                                 
                                 # Check database status
