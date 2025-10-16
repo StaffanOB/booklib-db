@@ -27,7 +27,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@booklib.com
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "8080:80"
+      - "8080:8080"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
       - ./pgadmin/servers.json:/pgadmin4/servers.json
